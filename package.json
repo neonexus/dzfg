@@ -1,8 +1,9 @@
 {
     "name": "dzfg",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "Download Zipball From GitHub, and extract it into a new directory.",
     "bin": "./bin.js",
+    "main": "./lib.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1"
     },
@@ -13,6 +14,7 @@
     "keywords": [
         "download",
         "zipball",
+        "zip",
         "github",
         "extract",
         "extraction",
