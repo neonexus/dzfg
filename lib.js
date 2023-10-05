@@ -5,8 +5,8 @@ const unzip = require('extract-zip');
 const {spawn} = require('child_process');
 const currentVersion = require('./package.json').version;
 
-const zipFilePath = path.join(process.cwd(), 'latest-release-dzfg.zip');
-const extractionPoint = path.join(process.cwd(), 'temp-extraction-dzfg');
+const zipFilePath = path.join(process.cwd(), 'dzfg-temp.zip');
+const extractionPoint = path.join(process.cwd(), 'dzfg-temp-extraction');
 
 const reqOptions = {
     headers: {
@@ -109,7 +109,7 @@ const dzfg = {
      * @property {boolean} [skipInstall=false] - Whether to skip `npm install` or not.
      */
     /**
-     * Download and Extract the zipball from a GitHub repo. Defaults to the latest release.
+     * Download and extract the zipball from a GitHub repo. Defaults to the latest release.
      *
      * @param {string|optionsObj} destinationFolder - The place to extract the repo into. Relative to the current working directory.
      * @param {string} repo - The GitHub repo to download / clone. Should be in the form: repo/my-awesome-repo
@@ -121,7 +121,7 @@ const dzfg = {
     downloadAndExtract: (destinationFolder, repo, version = 'latest', skipInstall = false) => new Promise(async (resolve, reject) => {
         if (typeof destinationFolder === 'object') {
             if (!destinationFolder.repo || destinationFolder.repo === '' || !destinationFolder.destinationFolder || destinationFolder.destinationFolder === '') {
-                return reject('When calling `dzfg.downloadZipballFromGitHub(options)`, `options.repo` and `options.destinationFolder` are required!');
+                return reject('When calling `dzfg.downloadAndExtract(options)`, `options.repo` and `options.destinationFolder` are required!');
             }
 
             repo = destinationFolder.repo;
@@ -130,7 +130,7 @@ const dzfg = {
             destinationFolder = destinationFolder.destinationFolder;
         }
 
-        const release = await dzfg.getVersionAndZipballUrl(repo, version).catch((e) => {
+        const release = await dzfg.getVersionAndUrls(repo, version).catch((e) => {
             return reject(e);
         });
 
@@ -138,7 +138,7 @@ const dzfg = {
             lib.downloadZipball(release.zipball).then(() => {
                 lib.extractZipball(destinationFolder).then(async () => {
                     if (!skipInstall && fs.existsSync(path.join(process.cwd(), destinationFolder, 'package.json'))) {
-                        await lib.runNpmInstall(destinationFolder).catch((e) => {});
+                        await lib.runNpmInstall(destinationFolder).catch(() => {});
                     }
 
                     return resolve(release.version);
@@ -152,19 +152,26 @@ const dzfg = {
     }),
 
     /**
-     * @typedef versionAndZipUrl
+     * @typedef versionAndUrls
+     * @property {string} name - The name of the version. Likely the same as the version tag.
+     * @property {string} description - The version description. Will likely contain markdown.
      * @property {string} version - The version returned from the API.
+     * @property {boolean} isDraft - If the version is a draft or not.
+     * @property {boolean} isPrerelease - If this version is a prerelease version or not.
+     * @property {string} createdAt - The datetime stamp of the version creation.
+     * @property {string} publishedAt - The datetime stamp of the version publication.
+     * @property {string} userSite - An HTML URL for human use, to view this version info.
      * @property {string} zipball - The URL for the zipball.
      */
     /**
-     * Get Version and Zipball URL
+     * Get version data and URLs
      *
      * @param {string} repo - The GitHub repo to get info for.
      * @param {string} [version=latest] - The version to get the zipball URL for.
      *
-     * @returns {Promise<versionAndZipUrl>}
+     * @returns {Promise<versionAndUrls>}
      */
-    getVersionAndZipballUrl: (repo, version = 'latest') => new Promise((resolve, reject) => {
+    getVersionAndUrls: (repo, version = 'latest') => new Promise((resolve, reject) => {
         if (!version || version === '') {
             version = 'latest';
         }
@@ -173,7 +180,8 @@ const dzfg = {
             version = 'tags/' + version; // Why GitHub, why?...
         }
 
-        https.get('https://api.github.com/repos/' + repo + '/releases/' + version, reqOptions, (res) => {
+        const reqUrl = 'https://api.github.com/repos/' + repo + '/releases/' + version;
+        https.get(reqUrl, reqOptions, (res) => {
             let data = '';
 
             res.on('data', (chunk) => {
@@ -183,13 +191,22 @@ const dzfg = {
             res.on('end', () => {
                 const release = JSON.parse(data);
 
-                if (release.message === 'Not Found' || !release.name || release.name === '' || !release.zipball_url || release.zipball_url === '') {
-                    console.log(release);
-                    return reject('The repo "' + repo + '" does not appear to be using GitHub releases, does not exist, or the version requested does not exist.');
+                if (release.message === 'Not Found' || !release.tag_name || release.tag_name === '' || !release.zipball_url || release.zipball_url === '') {
+                    return reject(
+                        '\nVersion "' + version.replace('tags/', '') + '" of the repo "' + repo + '" does not seem to exist. Make sure the repo is using GitHub Releases.' +
+                        '\n\nRequest made to: ' + reqUrl + '\n'
+                    );
                 }
 
                 return resolve({
-                    version: release.name,
+                    name: release.name,
+                    description: release.body,
+                    version: release.tag_name,
+                    isDraft: release.draft,
+                    isPrerelease: release.prerelease,
+                    createdAt: release.created_at,
+                    publishedAt: release.published_at,
+                    userSite: release.html_url,
                     zipball: release.zipball_url
                 });
             });

@@ -1,6 +1,6 @@
 {
     "name": "dzfg",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "Download Zipball From GitHub, and extract it into a new directory.",
     "bin": "./bin.js",
     "main": "./lib.js",
