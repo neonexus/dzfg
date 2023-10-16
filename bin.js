@@ -1,40 +1,111 @@
 #!/usr/bin/env node
 
-const dzfg = require('./lib');
+const startTime = process.hrtime();
 
-const destinationFolder = process.argv[2];
-const repo = process.argv[3];
+const dzfg = require('./lib');
+const {blankLine, colors, question, starBox, fixTime} = require('./utilities');
+const currentLibVersion = 'v' + require('./package.json').version;
+
+const repo = process.argv[2] || '';
+let destinationFolder = process.argv[3] || '';
 let version = process.argv[4];
-const skipInstall = (process.argv[5] === 'no-npm' || version === 'no-npm');
+const skipInstall = (process.argv[5] === 'no-npm' || destinationFolder === 'no-npm' || version === 'no-npm');
+
+if (!destinationFolder || !destinationFolder.length || destinationFolder === 'no-npm') {
+    destinationFolder = repo.includes('/') ? repo.split('/')[1] : '';
+}
 
 if (version === 'no-npm') {
     version = null;
 }
 
-function badStart(dest = '<new-folder>') {
-    console.error('Usage: npx dzfg ' + dest + ' <github-repo>');
-    console.error('Where <github-repo> should be in the format "username/my-awesome-repo".');
+/**
+ * Validate Inputs
+ */
+if (!repo || repo === '' || repo === 'fail' || !repo.includes('/') || !destinationFolder || destinationFolder === '' || destinationFolder === 'fail') {
+    blankLine();
+    starBox(
+        colors.red + 'Usage: npx dzfg <github-repo> <new-folder?>' + colors.reset
+        + '\n\n' + colors.bold + '<github-repo>' + colors.reset + ' should be in the format ' + colors.bold + '"username/my-awesome-repo"' + colors.reset + '.'
+        + '\n' + colors.bold + '<new-folder>' + colors.reset + ' is the optional folder name to extract the repo into (defaults to repo name).'
+    );
+    blankLine();
     process.exit(1);
 }
 
-if (!destinationFolder || destinationFolder === '') {
-    return badStart();
+/**
+ * Are we globally installed?
+ */
+if (!process.env.npm_execpath) {
+    // We seem to be running from a globally installed instance... Let's check for updates.
+    blankLine();
+    starBox('It appears this module (dzfg) was installed globally.', false, true);
+    blankLine();
+    console.log('Checking for updates...');
+
+    dzfg.getVersionInfo('neonexus/dzfg').then((currentInfo) => {
+        if (currentInfo.version !== currentLibVersion) {
+            blankLine();
+            starBox(
+                '  It seems there\'s an update.\nTo update your local instance:'
+                + '\n\n         ' + colors.blue + 'npm i -g dzfg' + colors.reset
+                + '\n\nInstalled Version: ' + colors.invert + ' ' + currentLibVersion + ' ' + colors.reset
+                + '\n   Latest Version: ' + colors.bold + colors.invert + ' ' + currentInfo.version + ' ' + colors.reset
+                , true // alignLeft
+                , false // isSmall
+                , 10 // padding
+            );
+
+            // TODO: Finish self-update
+            // question('Would you like to update? (N/y)', (answer) => {
+            //     if (answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes') {
+            //
+            //     } else {
+            //         console.log('Moving on...');
+            //         getOnWithIt();
+            //     }
+            // });
+
+            question('Would you like to continue? (Y/n)', (answer) => {
+                if (answer.toLowerCase() === 'n' || answer.toLowerCase() === 'no') {
+                    console.log('Stopping...');
+                } else {
+                    getOnWithIt();
+                }
+            });
+        } else {
+            console.log('We\'re up-to-date. Moving on...');
+            getOnWithIt();
+        }
+    }).catch((e) => {
+        blankLine();
+        console.error('There was an error checking with the GitHub API...');
+        console.error(e);
+        blankLine();
+    });
+} else {
+    getOnWithIt();
 }
 
-if (!repo || repo === '') {
-    return badStart(destinationFolder);
+function getOnWithIt() {
+    dzfg.downloadAndExtract(repo, destinationFolder, version, skipInstall).then((downloadedInfo) => {
+        const timeElapsed = process.hrtime(startTime);
+
+        blankLine();
+        starBox(
+            '        Repository: ' + colors.bold + repo + colors.reset
+            + '\n           Version: ' + colors.bold + downloadedInfo.version + colors.reset
+            + '\n      Extracted to: ' + colors.bold + destinationFolder + colors.reset
+            + '\n     Download Time: ' + colors.bold + downloadedInfo.downloadTime + colors.reset
+            + '\n   Extraction Time: ' + colors.bold + downloadedInfo.extractionTime + colors.reset
+            + '\n Installation Time: ' + colors.bold + downloadedInfo.installationTime + colors.reset
+            + '\nTotal Library Time: ' + colors.bold + downloadedInfo.totalTime + colors.reset
+            + '\nTotal Elapsed Time: ' + colors.invert + fixTime(timeElapsed) + colors.reset
+            , true // alignLeft
+            , true // isSmall
+        );
+        blankLine();
+    }).catch((e) => {
+        console.error(e);
+    });
 }
-
-dzfg.downloadAndExtract(destinationFolder, repo, version, skipInstall).then((downloadedVersion) => {
-    let wasLatest = '';
-
-    if (!version || version === '') {
-        wasLatest = 'Latest release of ';
-    }
-
-    console.log('');
-    console.log(wasLatest + '"' + repo + '" (' + downloadedVersion + ') downloaded and extracted to "' + destinationFolder + '" successfully!');
-    console.log('');
-}).catch((e) => {
-    console.error(e);
-});

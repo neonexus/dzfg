@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const unzip = require('extract-zip');
 const {spawn} = require('child_process');
+const {fixTime} = require('./utilities');
 const currentVersion = require('./package.json').version;
 
 const zipFilePath = path.join(process.cwd(), 'dzfg-temp.zip');
@@ -109,46 +110,80 @@ const dzfg = {
      * @property {boolean} [skipInstall=false] - Whether to skip `npm install` or not.
      */
     /**
+     * @typedef downloadInfoObj
+     * @property {string} version - The version that was downloaded.
+     * @property {string} downloadTime - The time to download in ms / s / m.
+     * @property {string} extractionTime - The time to extract in ms / s / m.
+     * @property {string} installationTime - The time to install in ms / s / m.
+     * @property {string} totalTime - The total time in ms / s / m.
+     */
+    /**
      * Download and extract the zipball from a GitHub repo. Defaults to the latest release.
      *
-     * @param {string|optionsObj} destinationFolder - The place to extract the repo into. Relative to the current working directory.
-     * @param {string} repo - The GitHub repo to download / clone. Should be in the form: repo/my-awesome-repo
+     * @param {string|optionsObj} repo - The GitHub repo to download / clone. Should be in the form: repo/my-awesome-repo
+     * @param {string} destinationFolder - The place to extract the repo into. Relative to the current working directory.
      * @param {string} [version=latest] - The release version to download. Blank / empty / falsy or 'latest' will force a lookup of the latest version.
      * @param {boolean} [skipInstall=false] - Whether to skip `npm install` or not.
      *
-     * @returns {Promise<string>} The version that was downloaded and extracted.
+     * @returns {Promise<downloadInfoObj>} The version that was downloaded, and all the time calculations for downloading, extracting and installing.
      */
-    downloadAndExtract: (destinationFolder, repo, version = 'latest', skipInstall = false) => new Promise(async (resolve, reject) => {
-        if (typeof destinationFolder === 'object') {
-            if (!destinationFolder.repo || destinationFolder.repo === '' || !destinationFolder.destinationFolder || destinationFolder.destinationFolder === '') {
+    downloadAndExtract: (repo, destinationFolder, version = 'latest', skipInstall = false) => new Promise((resolve, reject) => {
+        const startTime = process.hrtime();
+
+        if (typeof repo === 'object') {
+            if (!repo.repo || repo.repo === '' || !repo.destinationFolder || repo.destinationFolder === '') {
                 return reject('When calling `dzfg.downloadAndExtract(options)`, `options.repo` and `options.destinationFolder` are required!');
             }
 
-            repo = destinationFolder.repo;
-            version = destinationFolder.version || null;
-            skipInstall = destinationFolder.skipInstall;
-            destinationFolder = destinationFolder.destinationFolder;
+            repo = repo.repo;
+            version = repo.version || null;
+            skipInstall = repo.skipInstall || false;
+            destinationFolder = repo.destinationFolder;
         }
 
-        const release = await dzfg.getVersionAndUrls(repo, version).catch((e) => {
-            return reject(e);
-        });
+        if (!repo.includes('/')) {
+            console.log(repo);
+            return reject('Repository must be in the format "username/repo".');
+        }
 
-        if (release) {
+        if (fs.existsSync(destinationFolder)) {
+            return reject('The folder "' + destinationFolder + '" already exists.');
+        }
+
+        const downloadStartTime = process.hrtime();
+
+        dzfg.getVersionInfo(repo, version).then((release) => {
             lib.downloadZipball(release.zipball).then(() => {
+                const downloadTimeElapsed = process.hrtime(downloadStartTime);
+                const extractionStartTime = process.hrtime();
+
                 lib.extractZipball(destinationFolder).then(async () => {
+                    const extractionTimeElapsed = process.hrtime(extractionStartTime);
+
+                    const installationStartTime = process.hrtime();
+
                     if (!skipInstall && fs.existsSync(path.join(process.cwd(), destinationFolder, 'package.json'))) {
                         await lib.runNpmInstall(destinationFolder).catch(() => {});
                     }
 
-                    return resolve(release.version);
+                    const installationTimeElapsed = process.hrtime(installationStartTime);
+
+                    return resolve({
+                        version: release.version,
+                        downloadTime: fixTime(downloadTimeElapsed),
+                        extractionTime: fixTime(extractionTimeElapsed),
+                        installationTime: fixTime(installationTimeElapsed),
+                        totalTime: fixTime(process.hrtime(startTime))
+                    });
                 }).catch((e) => {
                     return reject(e);
                 });
             }).catch((e) => {
                 return reject(e);
             });
-        }
+        }).catch((e) => {
+            return reject(e);
+        });
     }),
 
     /**
@@ -167,11 +202,11 @@ const dzfg = {
      * Get version data and URLs
      *
      * @param {string} repo - The GitHub repo to get info for.
-     * @param {string} [version=latest] - The version to get the zipball URL for.
+     * @param {string} [version=latest] - The version to get the info for. Defaults to latest.
      *
      * @returns {Promise<versionAndUrls>}
      */
-    getVersionAndUrls: (repo, version = 'latest') => new Promise((resolve, reject) => {
+    getVersionInfo: (repo, version = 'latest') => new Promise((resolve, reject) => {
         if (!version || version === '') {
             version = 'latest';
         }

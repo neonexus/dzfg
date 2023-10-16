@@ -1,79 +1,111 @@
-# dzfg - Download Zipball From GitHub
+# `dzfg - Download Zipball From GitHub`
 
+[![npm](https://img.shields.io/npm/dm/dzfg?logo=npm&style=plastic)](https://www.npmjs.com/package/dzfg) [![License](https://img.shields.io/badge/license-GPL--3.0-orange?style=plastic)](https://github.com/neonexus/dzfg/blob/release/LICENSE)
 
+The idea of this package, is to make downloading / extracting / installing a GitHub repo's latest release a breeze (without creating a new repo, or using Git for that matter). Both in the terminal, and programmatically, if you are into that kind of thing...
 
-## How to use
+## This works for ALMOST any GitHub repo...
 
-The idea of this package, is to make downloading / extracting / installing a GitHub repo's latest release a breeze (without creating a new repo, or Git for that matter). Both in the terminal, and programmatically, if you are into that kind of thing...
+As long as the repository is using [GitHub's releases](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases) feature, this script will work.
 
-### Terminal Usage
+If a call to `https://api.github.com/repos/{username/repo}/releases/latest` returns a `tag_name` and `zipball_url`, then the script will download the zipball from `zipball_url`.
 
-#### Simple usage...
+Additionally, if the repo contains a `package.json` after extraction, `npm install` will be run automatically, unless disabled. See [advanced usage](#a-little-more-advanced) for more.
 
-`npx dzfg <new-folder> <github-repo>`
+## Terminal Usage
+
+### Simple usage
+
+`npx dzfg <github-repo> <new-folder-name?>`
 
 For example, if you wanted to "clone" (download the zipball, and extract it) the repo [sails-react-bootstrap-webpack](https://github.com/neonexus/sails-react-bootstrap-webpack), just do something like:
 
 ```shell
-npx dzfg my-new-site neonexus/sails-react-bootstrap-webpack
+npx dzfg neonexus/sails-react-bootstrap-webpack
 ```
 
-#### A little more advanced...
+This will download / extract / `npm install` the repo into a new folder `sails-react-bootstrap-webpack`. To change where the files get extracted to, add a second parameter to the command:
 
-You can disable the `npm install` after extraction:
+```shell
+npx dzfg neonexus/sails-react-bootstrap-webpack my-new-site
+````
 
-`npx dzfg <new-folder> <github-repo> <no-npm?>`
+This will extract into `my-new-site`, instead of the repo name.
+
+### A little more advanced
+
+If the repo contains a `package.json` in the root, but you don't want to `npm install` after extraction, just so `no-npm`:
+
+`npx dzfg <github-repo> <no-npm?>`
+
+**OR**
+
+`npx dzfg <github-repo> <new-folder> <no-npm?>`
 
 You can also provide a specific version to download / extract:
 
-`npx dzfg <new-folder> <github-repo> <version?> <no-npm?>`
+`npx dzfg <github-repo> <new-folder> <version?> <no-npm?>`
 
-This will download `v4.2.0`, and will skip the `npm install` step:
+**NOTE:** When supplying a version, you **MUST** supply a folder name.
+
+This will download `v4.2.3`, into the folder `my-new-site`, and will skip the `npm install` step:
 ```shell
-npx dzfg my-new-site neonexus/sails-react-bootstrap-webpack v4.2.0 no-npm
+npx dzfg neonexus/sails-react-bootstrap-webpack my-new-site v4.2.3 no-npm
 ```
 
-### Programmatic Usage
+## Programmatic Usage
 
 Using `.then()`:
 
 ```javascript
 const dzfg = require('dzfg');
 
-dzfg.downloadAndExtract('new-folder', 'username/my-repo').then(() => {});
+dzfg.downloadAndExtract('username/my-repo', 'new-folder').then((downloadInfo) => {});
 
 // OR
 
 dzfg.downloadAndExtract({
     repo: 'username/my-repo',
     destinationFolder: 'my-clone'
-}).then(() => {});
+}).then((downloadInfo) => {});
 ```
 
 Using `await`:
 ```javascript
 const dzfg = require('dzfg');
 
-await dzfg.downloadAndExtract('new-folder', 'username/my-repo');
+const downloadInfo = await dzfg.downloadAndExtract('username/my-repo', 'new-folder');
 
 // OR
 
-await dzfg.downloadAndExtract({
+const downloadInfo = await dzfg.downloadAndExtract({
     repo: 'username/my-repo',
     destinationFolder: 'my-clone'
 });
 ```
 
-#### Advanced usage:
+`downloadInfo` will look something like:
+
+```json5
+{
+    version: 'v1.0.1',
+    downloadTime: '1.04s',
+    extractionTime: '813.23ms',
+    installationTime: '17.70s',
+    totalTime: '19.55s'
+}
+```
+
+### Advanced usage
 
 ```javascript
 const dzfg = require('dzfg');
 
 // Parameters are: destination-folder, repo, version, skipNpmInstall
-await dzfg.downloadAndExtract('new-folder', 'username/my-repo', 'v1.0.1', true);
+const downloadInfo = await dzfg.downloadAndExtract('username/my-repo', 'new-folder', 'v1.0.1', true);
 
 // OR
-await dzfg.downloadAndExtract({
+const downloadInfo = await dzfg.downloadAndExtract({
     repo: 'username/my-repo',
     version: 'v1.0.1',
     skipInstall: true,
@@ -81,16 +113,16 @@ await dzfg.downloadAndExtract({
 });
 ```
 
-#### Getting version info for a repo:
+### Getting version info for a repo
 
 ```javascript
 const dzfg = require('dzfg');
 
-const latestVersionInfo = await dzfg.getVersionAndUrls('username/my-repo');
+const latestVersionInfo = await dzfg.getVersionInfo('username/my-repo');
 
 // OR
 
-dzfg.getVersionAndUrls('username/my-repo').then((latestVersionInfo) => {
+dzfg.getVersionInfo('username/my-repo').then((latestVersionInfo) => {
     // Do stuff with the info...
 });
 ```
@@ -120,39 +152,33 @@ Get info for a specific version:
 ```javascript
 const dzfg = require('dzfg');
 
-const latestVersionInfo = await dzfg.getVersionAndUrls('username/my-repo', 'v1.0.1');
+const latestVersionInfo = await dzfg.getVersionInfo('username/my-repo', 'v1.0.1');
 ```
 
-#### Don't forget to handle errors...
+### Don't forget to handle errors...
 
 ```javascript
 const dzfg = require('dzfg');
 
-dzfg.downloadAndExtract('new-folder', 'username/my-repo')
+dzfg.downloadAndExtract('username/my-repo', 'new-folder')
     .then((successMessage) => {})
     .catch((e) => {});
 
-dzfg.getVersionAndUrls('username/my-repo')
+dzfg.getVersionInfo('username/my-repo')
     .then((latestVersionInfo) => {})
     .catch((e) => {});
 
 // OR
 
 try {
-    const successMessage = await dzfg.downloadAndExtract('new-folder', 'username/my-repo');
+    const downloadInfo = await dzfg.downloadAndExtract('username/my-repo', 'new-folder');
 } catch (e) {
     // Display the error...
 }
 
 try {
-    const latestVersionInfo = await dzfg.getVersionAndUrls('username/my-repo');
+    const latestVersionInfo = await dzfg.getVersionInfo('username/my-repo');
 } catch (e) {
     // Display the error...
 }
 ```
-
-## This works for ALMOST any GitHub repo...
-
-As long as the repository is using GitHub's releases feature correctly, this script will work.
-
-If a call to `https://api.github.com/repos/{username/repo}/releases/latest` returns a `tag_name` and `zipball_url`, then the script will download the zipball from `zipball_url`.
