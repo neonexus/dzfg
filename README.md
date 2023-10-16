@@ -4,6 +4,8 @@
 
 The idea of this package, is to make downloading / extracting / installing a GitHub repo's latest release a breeze (without creating a new repo, or using Git for that matter). Both in the terminal, and programmatically, if you are into that kind of thing...
 
+`npx dzfg <github-username/repo>`
+
 ## This works for ALMOST any GitHub repo...
 
 As long as the repository is using [GitHub's releases](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases) feature, this script will work.
@@ -12,11 +14,25 @@ If a call to `https://api.github.com/repos/{username/repo}/releases/latest` retu
 
 Additionally, if the repo contains a `package.json` after extraction, `npm install` will be run automatically, unless disabled. See [advanced usage](#a-little-more-advanced) for more.
 
+## Table of Contents
+
+* [Terminal Usage](#terminal-usage)
+  * [Simple Usage](#simple-usage)
+  * [A Little More Advanced](#a-little-more-advanced)
+* [Programmatic Usage](#programmatic-usage)
+  * [Advanced Usage](#advanced-usage)
+  * [Getting Version Info for a Repo](#getting-version-info-for-a-repo)
+  * [Don't Forget to Handle Errors...](#dont-forget-to-handle-errors)
+
 ## Terminal Usage
 
-### Simple usage
+### Simple Usage
 
-`npx dzfg <github-repo> <new-folder-name?>`
+`npx dzfg <github-repo>`
+
+OR
+
+`npx dzfg <github-repo> <new-folder-name>`
 
 For example, if you wanted to "clone" (download the zipball, and extract it) the repo [sails-react-bootstrap-webpack](https://github.com/neonexus/sails-react-bootstrap-webpack), just do something like:
 
@@ -32,9 +48,9 @@ npx dzfg neonexus/sails-react-bootstrap-webpack my-new-site
 
 This will extract into `my-new-site`, instead of the repo name.
 
-### A little more advanced
+### A Little More Advanced
 
-If the repo contains a `package.json` in the root, but you don't want to `npm install` after extraction, just so `no-npm`:
+If the repo contains a `package.json` in the root, but you don't want to `npm install` after extraction, just add `no-npm`:
 
 `npx dzfg <github-repo> <no-npm?>`
 
@@ -113,7 +129,7 @@ const downloadInfo = await dzfg.downloadAndExtract({
 });
 ```
 
-### Getting version info for a repo
+### Getting Version Info for a Repo
 
 ```javascript
 const dzfg = require('dzfg');
@@ -155,7 +171,7 @@ const dzfg = require('dzfg');
 const latestVersionInfo = await dzfg.getVersionInfo('username/my-repo', 'v1.0.1');
 ```
 
-### Don't forget to handle errors...
+### Don't Forget to Handle Errors...
 
 ```javascript
 const dzfg = require('dzfg');
