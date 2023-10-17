@@ -1,9 +1,10 @@
+const fs = require('fs');
 const https = require('https');
 const path = require('path');
-const fs = require('fs');
-const unzip = require('extract-zip');
 const {spawn} = require('child_process');
-const {fixTime} = require('./utilities');
+const unzip = require('extract-zip');
+
+const {fixTime, formatBytes, getDirectorySize} = require('./utilities');
 const currentVersion = require('./package.json').version;
 
 const zipFilePath = path.join(process.cwd(), 'dzfg-temp.zip');
@@ -14,6 +15,9 @@ const reqOptions = {
         'User-Agent': 'npx dzfg (v' + currentVersion + ')'
     }
 };
+
+let zipballSize = 0;
+let extractedSize = 0;
 
 // Private functions
 const lib = {
@@ -31,6 +35,11 @@ const lib = {
                 } else if (res.statusCode !== 200) {
                     return reject('Bad status code when downloading zipball: ' + res.statusCode);
                 }
+
+                // Track the size of the zipball
+                res.on('data', (chunk) => {
+                    zipballSize += chunk.length;
+                });
 
                 res.pipe(zipFile);
 
@@ -51,6 +60,8 @@ const lib = {
         unzip(zipFilePath, {
             dir: extractionPoint,
             onEntry: (entry) => {
+                extractedSize += entry.uncompressedSize;
+
                 if (!dirToBeMoved) {
                     // This is the folder that gets extracted inside the extraction-point folder.
                     // Something like: my-repo-of-awesome-4.2.2
@@ -112,10 +123,13 @@ const dzfg = {
     /**
      * @typedef downloadInfoObj
      * @property {string} version - The version that was downloaded.
-     * @property {string} downloadTime - The time to download in ms / s / m.
-     * @property {string} extractionTime - The time to extract in ms / s / m.
-     * @property {string} installationTime - The time to install in ms / s / m.
-     * @property {string} totalTime - The total time in ms / s / m.
+     * @property {string} downloadTime - Total time to download.
+     * @property {string} extractionTime - Time to extract the zipball.
+     * @property {string} installationTime - Total npm installation time.
+     * @property {string} totalTime - Total runtime of the library (download / extract / install).
+     * @property {string} zipballSize - Total size of the zipball.
+     * @property {string} extractedSize - Total size after extraction.
+     * @property {string} installedSize - Total size after installation.
      */
     /**
      * Download and extract the zipball from a GitHub repo. Defaults to the latest release.
@@ -167,13 +181,21 @@ const dzfg = {
                     }
 
                     const installationTimeElapsed = process.hrtime(installationStartTime);
+                    let installedSize = extractedSize;
+
+                    if (!skipInstall) {
+                        installedSize += getDirectorySize(path.join(process.cwd(), destinationFolder, 'node_modules'));
+                    }
 
                     return resolve({
                         version: release.version,
                         downloadTime: fixTime(downloadTimeElapsed),
                         extractionTime: fixTime(extractionTimeElapsed),
                         installationTime: fixTime(installationTimeElapsed),
-                        totalTime: fixTime(process.hrtime(startTime))
+                        totalTime: fixTime(process.hrtime(startTime)),
+                        zipballSize: formatBytes(zipballSize),
+                        extractedSize: formatBytes(extractedSize),
+                        installedSize: formatBytes(installedSize)
                     });
                 }).catch((e) => {
                     return reject(e);

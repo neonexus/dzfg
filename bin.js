@@ -3,7 +3,7 @@
 const startTime = process.hrtime();
 
 const dzfg = require('./lib');
-const {blankLine, colors, question, starBox, fixTime} = require('./utilities');
+const {blankLine, colors, fixTime, question, starBox} = require('./utilities');
 const currentLibVersion = 'v' + require('./package.json').version;
 
 const repo = process.argv[2] || '';
@@ -96,11 +96,14 @@ function getOnWithIt() {
             '        Repository: ' + colors.bold + repo + colors.reset
             + '\n           Version: ' + colors.bold + downloadedInfo.version + colors.reset
             + '\n      Extracted to: ' + colors.bold + destinationFolder + colors.reset
-            + '\n     Download Time: ' + colors.bold + downloadedInfo.downloadTime + colors.reset
+            + '\n\n     Download Time: ' + colors.bold + downloadedInfo.downloadTime + colors.reset
             + '\n   Extraction Time: ' + colors.bold + downloadedInfo.extractionTime + colors.reset
             + '\n Installation Time: ' + colors.bold + downloadedInfo.installationTime + colors.reset
             + '\nTotal Library Time: ' + colors.bold + downloadedInfo.totalTime + colors.reset
-            + '\nTotal Elapsed Time: ' + colors.invert + fixTime(timeElapsed) + colors.reset
+            + '\nTotal Elapsed Time: ' + colors.invert + ' ' + fixTime(timeElapsed) + ' ' + colors.reset
+            + '\n\n  Size of Download: ' + colors.bold + downloadedInfo.zipballSize + colors.reset
+            + '\n Uncompressed Size: ' + colors.bold + downloadedInfo.extractedSize + colors.reset
+            + '\n Post-Install Size: ' + colors.invert + ' ' + downloadedInfo.installedSize + ' ' + colors.reset
             , true // alignLeft
             , true // isSmall
         );

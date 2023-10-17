@@ -1,6 +1,8 @@
+const fs = require('fs');
+const path = require('path');
 const readline = require('readline');
 
-module.exports = {
+const utils = {
     colors: {
         blue: '\x1b[34m',
         bold: '\x1b[1m',
@@ -20,16 +22,44 @@ module.exports = {
 
         // Determine whether to display in milliseconds, seconds, or minutes
         if (executionTimeInMilliseconds < 1000) {
-            timeOut = executionTimeInMilliseconds.toFixed(2) + 'ms';
+            timeOut = executionTimeInMilliseconds.toFixed(2) + ' ms';
         } else if (executionTimeInMilliseconds < 60000) {
             const executionTimeInSeconds = executionTimeInMilliseconds / 1000;
-            timeOut = executionTimeInSeconds.toFixed(2) + 's';
+            timeOut = executionTimeInSeconds.toFixed(2) + ' s';
         } else {
             const executionTimeInMinutes = executionTimeInMilliseconds / 60000;
-            timeOut = executionTimeInMinutes.toFixed(2) + 'm';
+            timeOut = executionTimeInMinutes.toFixed(2) + ' m';
         }
 
         return timeOut;
+    },
+
+    // Convert bytes to human-readable
+    formatBytes: (bytes) => {
+        if (bytes === 0) return '0 Bytes';
+
+        const sizes = ['Bytes', 'KiB', 'MiB', 'GiB', 'TiB'];
+        const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+
+        return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
+    },
+
+    getDirectorySize: (directory) => {
+        let size = 0;
+        const files = fs.readdirSync(directory);
+
+        for (const file of files) {
+            const filePath = path.join(directory, file);
+            const stats = fs.statSync(filePath);
+
+            if (stats.isDirectory()) {
+                size += utils.getDirectorySize(filePath);
+            } else {
+                size += stats.size;
+            }
+        }
+
+        return size;
     },
 
     question: (q, a) => {
@@ -92,3 +122,5 @@ module.exports = {
         console.log(box.join('\n'));
     }
 };
+
+module.exports = utils;
