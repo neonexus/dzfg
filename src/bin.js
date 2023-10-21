@@ -4,7 +4,7 @@ const startTime = process.hrtime();
 
 const dzfg = require('./lib');
 const {blankLine, colors, fixTime, question, starBox} = require('./utilities');
-const currentLibVersion = 'v' + require('./package.json').version;
+const currentLibVersion = 'v' + require('../package.json').version;
 
 const repo = process.argv[2] || '';
 let destinationFolder = process.argv[3] || '';
@@ -55,16 +55,6 @@ if (!process.env.npm_execpath) {
                 , false // isSmall
                 , 10 // padding
             );
-
-            // TODO: Finish self-update
-            // question('Would you like to update? (N/y)', (answer) => {
-            //     if (answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes') {
-            //
-            //     } else {
-            //         console.log('Moving on...');
-            //         getOnWithIt();
-            //     }
-            // });
 
             question('Would you like to continue? (Y/n)', (answer) => {
                 if (answer.toLowerCase() === 'n' || answer.toLowerCase() === 'no') {

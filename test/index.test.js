@@ -1,13 +1,17 @@
 const chai = require('chai');
-// eslint-disable-next-line
 const should = chai.should();
-const utils = require('../utilities');
+const fs = require('fs');
+const path = require('path');
+const utils = require('../src/utilities');
 
 chai.use(require('chai-spies'));
 
-const consoleLogSpy = chai.spy.on(console, 'log');
-
 describe('dzfg - Download Zipball From Github', () => {
+    afterEach((done) => {
+        chai.spy.restore();
+        done();
+    });
+
     describe('Utility Functions', () => {
         it('should have color options', (done) => {
             utils.colors.should.be.an('object');
@@ -23,10 +27,15 @@ describe('dzfg - Download Zipball From Github', () => {
         });
 
         it('should create blank lines in the console', (done) => {
+            const og = console.log;
+            console.log = () => {};
+            const consoleLogSpy = chai.spy.on(console, 'log');
+
             utils.blankLine();
 
             consoleLogSpy.should.have.been.called.once.with('');
 
+            console.log = og;
             done();
         });
 
@@ -67,32 +76,72 @@ describe('dzfg - Download Zipball From Github', () => {
             done();
         });
 
+        it('should calculate the size of a directory recursively', (done) => {
+            const githubSize = fs.statSync(path.join(__dirname, '../.github/FUNDING.yml')).size + fs.statSync(path.join(__dirname, '../.github/workflows/codeql.yml')).size;
+
+            const utilsCalc = utils.getDirectorySize(path.join(__dirname, '../.github'));
+
+            utilsCalc.should.be.eq(githubSize);
+
+            done();
+        });
+
         it('should be able to ask the user questions in the console', (done) => {
-            const readline = chai.spy.interface({
-                question: (q, a) => {
+            const readlineInterface = chai.spy.interface({
+                question: chai.spy((q, a) => {
                     q.should.eq('Test: ');
                     a('neat');
-                },
+                }),
                 close: chai.spy()
             });
 
+            const answerSpy = chai.spy();
+
             utils.question(
                 'Test',
-                (a) => {
-                    a.should.eq('neat');
-                },
+                answerSpy,
                 {
                     createInterface: (input) => {
                         input.should.have.property('input', process.stdin);
                         input.should.have.property('output', process.stdout);
 
-                        return readline;
+                        return readlineInterface;
                     }
                 }
             );
 
-            readline.close.should.have.been.called.once;
+            answerSpy.should.have.been.called.once.with('neat');
+            readlineInterface.question.should.have.been.called.once;
+            readlineInterface.close.should.have.been.called.once;
 
+            done();
+        });
+
+        it('should create star boxes', (done) => {
+            const og = console.log;
+            console.log = () => {};
+            const consoleLogSpy = chai.spy.on(console, 'log');
+
+            utils.starBox('Nice Test!');
+            consoleLogSpy.should.on.nth(1).to.have.been.called.with('****************\n*              *\n*  Nice Test!  *\n*              *\n****************');
+
+            utils.starBox('Multiple\nlines\ntest');
+            consoleLogSpy.should.on.nth(2).to.have.been.called.with('**************\n*            *\n*  Multiple  *\n*   lines    *\n*    test    *\n*            *\n**************');
+
+            utils.starBox('Left test\n          Neat', true);
+            consoleLogSpy.should.on.nth(3).to.have.been.called.with(
+                '********************\n*                  *\n*  Left test       *\n*            Neat  *\n*                  *\n********************'
+            );
+
+            utils.starBox('Small test', false, true);
+            consoleLogSpy.should.on.nth(4).to.have.been.called.with('****************\n*  Small test  *\n****************');
+
+            utils.starBox('Padding test', false, false, 5);
+            consoleLogSpy.should.on.nth(5).to.have.been.called.with(
+                '************************\n*                      *\n*     Padding test     *\n*                      *\n************************'
+            );
+
+            console.log = og;
             done();
         });
     });
