@@ -1,6 +1,10 @@
-# `dzfg - Download Zipball From GitHub`
+# dzfg - Download Zipball From GitHub
 
-[![npm](https://img.shields.io/npm/dm/dzfg?logo=npm&style=plastic)](https://www.npmjs.com/package/dzfg) [![License](https://img.shields.io/badge/license-GPL--3.0-orange?style=plastic)](https://github.com/neonexus/dzfg/blob/release/LICENSE)
+[![npm](https://img.shields.io/npm/dm/dzfg?logo=npm&style=plastic)](https://www.npmjs.com/package/dzfg)
+[![Build Status](https://img.shields.io/travis/com/neonexus/dzfg/release?style=plastic&logo=travis)](https://app.travis-ci.com/neonexus/dzfg)
+[![NPM version](https://img.shields.io/npm/v/dzfg/latest?style=plastic&logo=npm&color=blue)](https://www.npmjs.com/package/dzfg)
+[![GitHub version](https://img.shields.io/github/v/release/neonexus/dzfg?style=plastic&logo=github&label=GitHub@latest)](https://github.com/neonexus/dzfg)
+[![License](https://img.shields.io/badge/license-GPL--3.0-orange?style=plastic)](https://github.com/neonexus/dzfg/blob/release/LICENSE)
 
 The idea of this package, is to make downloading / extracting / installing a GitHub repo's latest release a breeze (without creating a new repo, or using Git for that matter). Both in the terminal, and programmatically, if you are into that kind of thing...
 
@@ -19,6 +23,8 @@ Additionally, if the repo contains a `package.json` after extraction, `npm insta
 * [Terminal Usage](#terminal-usage)
   * [Simple Usage](#simple-usage)
   * [A Little More Advanced](#a-little-more-advanced)
+* [Installing `dzfg` Globally](#installing-dzfg-globally)
+  * [Additional Script Names](#additional-script-names)
 * [Programmatic Usage](#programmatic-usage)
   * [Advanced Usage](#advanced-usage)
   * [Getting Version Info for a Repo](#getting-version-info-for-a-repo)
@@ -69,6 +75,31 @@ This will download `v4.2.3`, into the folder `my-new-site`, and will skip the `n
 npx dzfg neonexus/sails-react-bootstrap-webpack my-new-site v4.2.3 no-npm
 ```
 
+## Installing `dzfg` Globally
+
+```shell
+npm i -g dzfg
+```
+
+You can install `dzfg` globally and run it directly (if you have your `$PATH` set correctly). This will save a small amount of time, as `npx` won't have to download and install, before running `dzfg`.
+However, this also means you won't always be using the most up-to-date version of `dzfg` (GitHub may change their API, security issues may arise, etc.).
+
+To help ensure you are always up-to-date, `dzfg` will use itself to check if there is an update, and if your current version doesn't match the latest version on GitHub, it will let you know.
+This does **not** prevent you from using the version you already have installed, but it will ask you if you want to continue (you can simply hit enter).
+
+![Example Update](example-update.png)
+
+### Additional Script Names
+
+Once installed globally, you can use `dzfg` directly, with one of its few different binary names:
+
+* `dzfg`
+* `dl-zip-from-gh`
+* `download-zip-from-gh`
+* `download-zip-from-github`
+* `download-zipball-from-gh`
+* `download-zipball-from-github`
+
 ## Programmatic Usage
 
 Using `.then()`:
@@ -105,10 +136,13 @@ const downloadInfo = await dzfg.downloadAndExtract({
 ```json5
 {
     version: 'v1.0.1',
-    downloadTime: '1.04s',
-    extractionTime: '813.23ms',
-    installationTime: '17.70s',
-    totalTime: '19.55s'
+    downloadTime: '714.82 ms',
+    extractionTime: '55.17 ms',
+    installationTime: '2.75 s',
+    totalTime: '3.61 s',
+    zipballSize: '45.11 KiB',
+    extractedSize: '146.73 KiB',
+    installedSize: '19.45 MiB'
 }
 ```
 

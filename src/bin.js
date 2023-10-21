@@ -4,7 +4,7 @@ const startTime = process.hrtime();
 
 const dzfg = require('./lib');
 const {blankLine, colors, fixTime, question, starBox} = require('./utilities');
-const currentLibVersion = 'v' + require('./package.json').version;
+const currentLibVersion = 'v' + require('../package.json').version;
 
 const repo = process.argv[2] || '';
 let destinationFolder = process.argv[3] || '';
@@ -56,16 +56,6 @@ if (!process.env.npm_execpath) {
                 , 10 // padding
             );
 
-            // TODO: Finish self-update
-            // question('Would you like to update? (N/y)', (answer) => {
-            //     if (answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes') {
-            //
-            //     } else {
-            //         console.log('Moving on...');
-            //         getOnWithIt();
-            //     }
-            // });
-
             question('Would you like to continue? (Y/n)', (answer) => {
                 if (answer.toLowerCase() === 'n' || answer.toLowerCase() === 'no') {
                     console.log('Stopping...');
@@ -88,22 +78,22 @@ if (!process.env.npm_execpath) {
 }
 
 function getOnWithIt() {
-    dzfg.downloadAndExtract(repo, destinationFolder, version, skipInstall).then((downloadedInfo) => {
+    dzfg.downloadAndExtract(repo, destinationFolder, version, skipInstall).then((downloadInfo) => {
         const timeElapsed = process.hrtime(startTime);
 
         blankLine();
         starBox(
             '        Repository: ' + colors.bold + repo + colors.reset
-            + '\n           Version: ' + colors.bold + downloadedInfo.version + colors.reset
+            + '\n           Version: ' + colors.bold + downloadInfo.version + colors.reset
             + '\n      Extracted to: ' + colors.bold + destinationFolder + colors.reset
-            + '\n\n     Download Time: ' + colors.bold + downloadedInfo.downloadTime + colors.reset
-            + '\n   Extraction Time: ' + colors.bold + downloadedInfo.extractionTime + colors.reset
-            + '\n Installation Time: ' + colors.bold + downloadedInfo.installationTime + colors.reset
-            + '\nTotal Library Time: ' + colors.bold + downloadedInfo.totalTime + colors.reset
+            + '\n\n     Download Time: ' + colors.bold + downloadInfo.downloadTime + colors.reset
+            + '\n   Extraction Time: ' + colors.bold + downloadInfo.extractionTime + colors.reset
+            + '\n Installation Time: ' + colors.bold + downloadInfo.installationTime + colors.reset
+            + '\nTotal Library Time: ' + colors.bold + downloadInfo.totalTime + colors.reset
             + '\nTotal Elapsed Time: ' + colors.invert + ' ' + fixTime(timeElapsed) + ' ' + colors.reset
-            + '\n\n  Size of Download: ' + colors.bold + downloadedInfo.zipballSize + colors.reset
-            + '\n Uncompressed Size: ' + colors.bold + downloadedInfo.extractedSize + colors.reset
-            + '\n Post-Install Size: ' + colors.invert + ' ' + downloadedInfo.installedSize + ' ' + colors.reset
+            + '\n\n  Size of Download: ' + colors.bold + downloadInfo.zipballSize + colors.reset
+            + '\n Uncompressed Size: ' + colors.bold + downloadInfo.extractedSize + colors.reset
+            + '\n Post-Install Size: ' + colors.invert + ' ' + downloadInfo.installedSize + ' ' + colors.reset
             , true // alignLeft
             , true // isSmall
         );

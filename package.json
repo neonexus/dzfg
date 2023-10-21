@@ -1,13 +1,16 @@
 {
     "name": "dzfg",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "Download Zipball From GitHub, extract it into a new directory, install dependencies.",
     "bin": {
-        "dzfg": "./bin.js",
-        "download-zip-from-github": "./bin.js",
-        "download-zipball-from-github": "./bin.js"
+        "dzfg": "src/bin.js",
+        "dl-zip-from-gh": "src/bin.js",
+        "download-zip-from-gh": "src/bin.js",
+        "download-zip-from-github": "src/bin.js",
+        "download-zipball-from-gh": "src/bin.js",
+        "download-zipball-from-github": "src/bin.js"
     },
-    "main": "./lib.js",
+    "main": "src/lib.js",
     "scripts": {
         "lint": "./node_modules/eslint/bin/eslint.js . --max-warnings=0 --report-unused-disable-directives && echo '✔  Your .js files look good.'",
         "test": "npm run lint && mocha -R spec --ui bdd --timeout 5000 \"test/**/*.test.js\" && echo '✔ Done ✔\n'"
@@ -16,6 +19,11 @@
         "type": "git",
         "url": "git://github.com/neonexus/dzfg.git"
     },
+    "files": [
+        "src/bin.js",
+        "src/lib.js",
+        "src/utilities.js"
+    ],
     "keywords": [
         "download",
         "zipball",
@@ -44,8 +52,8 @@
     },
     "devDependencies": {
         "chai": "4.3.10",
-        "chai-spies": "^1.0.0",
-        "eslint": "^8.51.0",
+        "chai-spies": "1.0.0",
+        "eslint": "8.51.0",
         "mocha": "10.2.0"
     }
 }

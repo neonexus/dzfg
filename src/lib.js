@@ -5,7 +5,7 @@ const {spawn} = require('child_process');
 const unzip = require('extract-zip');
 
 const {fixTime, formatBytes, getDirectorySize} = require('./utilities');
-const currentVersion = require('./package.json').version;
+const currentVersion = require('../package.json').version;
 
 const zipFilePath = path.join(process.cwd(), 'dzfg-temp.zip');
 const extractionPoint = path.join(process.cwd(), 'dzfg-temp-extraction');
@@ -15,9 +15,6 @@ const reqOptions = {
         'User-Agent': 'npx dzfg (v' + currentVersion + ')'
     }
 };
-
-let zipballSize = 0;
-let extractedSize = 0;
 
 // Private functions
 const lib = {
@@ -36,6 +33,8 @@ const lib = {
                     return reject('Bad status code when downloading zipball: ' + res.statusCode);
                 }
 
+                let zipballSize = 0;
+
                 // Track the size of the zipball
                 res.on('data', (chunk) => {
                     zipballSize += chunk.length;
@@ -46,7 +45,7 @@ const lib = {
                 zipFile.on('finish', () => {
                     zipFile.close();
 
-                    return resolve();
+                    return resolve(zipballSize);
                 });
             });
         }
@@ -56,6 +55,7 @@ const lib = {
 
     extractZipball: (destinationFolder) => new Promise((resolve, reject) => {
         let dirToBeMoved;
+        let extractedSize = 0;
 
         unzip(zipFilePath, {
             dir: extractionPoint,
@@ -78,7 +78,7 @@ const lib = {
 
             lib.__cleanup();
 
-            return resolve();
+            return resolve(extractedSize);
         }).catch((e) => {
             lib.__cleanup();
 
@@ -150,13 +150,12 @@ const dzfg = {
             }
 
             repo = repo.repo;
-            version = repo.version || null;
+            version = repo.version || '';
             skipInstall = repo.skipInstall || false;
             destinationFolder = repo.destinationFolder;
         }
 
         if (!repo.includes('/')) {
-            console.log(repo);
             return reject('Repository must be in the format "username/repo".');
         }
 
@@ -167,11 +166,11 @@ const dzfg = {
         const downloadStartTime = process.hrtime();
 
         dzfg.getVersionInfo(repo, version).then((release) => {
-            lib.downloadZipball(release.zipball).then(() => {
+            lib.downloadZipball(release.zipball).then((zipballSize) => {
                 const downloadTimeElapsed = process.hrtime(downloadStartTime);
                 const extractionStartTime = process.hrtime();
 
-                lib.extractZipball(destinationFolder).then(async () => {
+                lib.extractZipball(destinationFolder).then(async (extractedSize) => {
                     const extractionTimeElapsed = process.hrtime(extractionStartTime);
 
                     const installationStartTime = process.hrtime();
