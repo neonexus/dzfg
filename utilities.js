@@ -1,6 +1,5 @@
 const fs = require('fs');
 const path = require('path');
-const readline = require('readline');
 
 const utils = {
     colors: {
@@ -40,8 +39,9 @@ const utils = {
 
         const sizes = ['Bytes', 'KiB', 'MiB', 'GiB', 'TiB'];
         const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+        const finalNumber = bytes / Math.pow(1024, i);
 
-        return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
+        return ((i > 0) ? finalNumber.toFixed(2) : finalNumber) + ' ' + sizes[i];
     },
 
     getDirectorySize: (directory) => {
@@ -62,7 +62,7 @@ const utils = {
         return size;
     },
 
-    question: (q, a) => {
+    question: (q, a, readline = require('readline')) => {
         const rl = readline.createInterface({
             input: process.stdin,
             output: process.stdout,
@@ -76,9 +76,8 @@ const utils = {
 
     starBox: (text, alignLeft = false, isSmall = false, padding = 2) => {
         // Remove color codes from the text for formatting purposes
-        const cleanedText = text.replace(/\x1b\[[0-9;]*m/g, '');
+        const cleanLines = text.replace(/\x1b\[[0-9;]*m/g, '').split('\n');
         const lines = text.split('\n');
-        const cleanLines = cleanedText.split('\n');
         const maxLength = cleanLines.reduce((max, line) => Math.max(max, line.length), 0);
         const fullLine = '*'.repeat(maxLength + (padding * 2) + 2);
         const emptyLine = `*${' '.repeat(maxLength + (padding * 2))}*`;

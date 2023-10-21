@@ -150,7 +150,7 @@ const dzfg = {
             }
 
             repo = repo.repo;
-            version = repo.version || null;
+            version = repo.version || '';
             skipInstall = repo.skipInstall || false;
             destinationFolder = repo.destinationFolder;
         }

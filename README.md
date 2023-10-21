@@ -1,4 +1,4 @@
-# `dzfg - Download Zipball From GitHub`
+# dzfg - Download Zipball From GitHub
 
 [![npm](https://img.shields.io/npm/dm/dzfg?logo=npm&style=plastic)](https://www.npmjs.com/package/dzfg) [![License](https://img.shields.io/badge/license-GPL--3.0-orange?style=plastic)](https://github.com/neonexus/dzfg/blob/release/LICENSE)
 
@@ -105,10 +105,13 @@ const downloadInfo = await dzfg.downloadAndExtract({
 ```json5
 {
     version: 'v1.0.1',
-    downloadTime: '1.04s',
-    extractionTime: '813.23ms',
-    installationTime: '17.70s',
-    totalTime: '19.55s'
+    downloadTime: '714.82 ms',
+    extractionTime: '55.17 ms',
+    installationTime: '2.75 s',
+    totalTime: '3.61 s',
+    zipballSize: '45.11 KiB',
+    extractedSize: '146.73 KiB',
+    installedSize: '19.45 MiB'
 }
 ```
 
