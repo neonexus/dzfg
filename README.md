@@ -1,3 +1,7 @@
+# DEPRECATED
+
+To better align with the goal of this package, and make it a bit easier to find / use, I've decided to rename it to [`drfg` - Download Release From GitHub](https://www.npmjs.com/package/drfg).
+
 # dzfg - Download Zipball From GitHub
 
 [![npm](https://img.shields.io/npm/dm/dzfg?logo=npm&style=plastic)](https://www.npmjs.com/package/dzfg)

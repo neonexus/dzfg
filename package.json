@@ -1,6 +1,6 @@
 {
     "name": "dzfg",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "description": "Download Zipball From GitHub, extract it into a new directory, install dependencies.",
     "bin": {
         "dzfg": "src/bin.js",
